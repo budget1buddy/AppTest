@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Buddy</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background: url('Background.gif') repeat; /* Actualiza con el nombre de tu imagen */
+            background-size: cover;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        form {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: #90fadad4;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        input {
+            width: calc(100% - 16px);
+            padding: 10px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #90fadad4;
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #a0beb5d4;
+        }
+
+        #total {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #90fadad4;
+            color: white;
+        }
+
+        .deleteButton {
+            background-color: #e74c3c;
+            color: white;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Budget Buddy</h1>
+
+    <form id="expenseForm">
+        <label for="description">Descripción:</label>
+        <input type="text" id="description" name="description" required>
+
+        <label for="amount">Cantidad:</label>
+        <input type="number" id="amount" name="amount" required>
+
+        <button type="button" onclick="addExpense()">Registrar Gasto</button>
+    </form>
+
+    <div id="total">Total de Gastos: $0.00</div>
+
+    <table id="expenseTable">
+        <thead>
+            <tr>
+                <th>Descripción</th>
+                <th>Cantidad</th>
+                <th>Eliminar</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aquí se cargarán las filas de la tabla al cargar la página -->
+        </tbody>
+    </table>
+
+    <button id="clearExpensesButton" onclick="clearAllExpenses()">Borrar todos los gastos</button>
+
+    <script>
+        let totalExpenses = 0;
+
+        // Cargar datos desde el almacenamiento local al cargar la página
+        document.addEventListener('DOMContentLoaded', function () {
+            loadTableFromLocalStorage();
+            updateTotal();
+        });
+
+        function addExpense() {
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+
+            if (isNaN(amount)) {
+                alert('Por favor, ingresa una cantidad válida.');
+                return;
+            }
+
+            totalExpenses += amount;
+
+            updateTotal();
+            updateTable(description, amount);
+            saveTableToLocalStorage();
+        }
+
+        function updateTotal() {
+            const totalElement = document.getElementById('total');
+            totalElement.textContent = `Total de Gastos: $${totalExpenses.toFixed(2)}`;
+        }
+
+        function updateTable(description, amount) {
+            const tableBody = document.querySelector('#expenseTable tbody');
+            const newRow = tableBody.insertRow();
+
+            const cell1 = newRow.insertCell(0);
+            const cell2 = newRow.insertCell(1);
+            const cell3 = newRow.insertCell(2);
+
+            cell1.textContent = description;
+            cell2.textContent = `$${amount.toFixed(2)}`;
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Eliminar';
+            deleteButton.className = 'deleteButton';
+            deleteButton.addEventListener('click', function () {
+                deleteExpense(newRow, amount);
+            });
+
+            cell3.appendChild(deleteButton);
+        }
+
+        function deleteExpense(row, amount) {
+            totalExpenses -= amount;
+            updateTotal();
+            row.remove();
+            saveTableToLocalStorage();
+        }
+
+        function clearAllExpenses() {
+            const tableBody = document.querySelector('#expenseTable tbody');
+            tableBody.innerHTML = '';
+            totalExpenses = 0;
+            updateTotal();
+            localStorage.removeItem('expenses');
+        }
+
+        function saveTableToLocalStorage() {
+            const tableRows = document.querySelectorAll('#expenseTable tbody tr');
+            const data = [];
+
+            tableRows.forEach(row => {
+                const description = row.cells[0].textContent;
+                const amount = parseFloat(row.cells[1].textContent.replace('$', ''));
+                data.push({ description, amount });
+            });
+
+            localStorage.setItem('expenses', JSON.stringify(data));
+        }
+
+        function loadTableFromLocalStorage() {
+            const storedData = localStorage.getItem('expenses');
+            if (storedData) {
+                const data = JSON.parse(storedData);
+                data.forEach(item => {
+                    updateTable(item.description, item.amount);
+                    totalExpenses += item.amount;
+                });
+            }
+        }
+    </script>
+
+</body>
+</html>
