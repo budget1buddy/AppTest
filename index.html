@@ -60,15 +60,21 @@
             color: #555;
         }
 
+        .table-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #f2f2f2;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
         th, td {
-            border: 1px solid #ddd;
             padding: 12px;
             text-align: left;
         }
@@ -76,6 +82,11 @@
         th {
             background-color: #a6a6a6;
             color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
         }
 
         .deleteButton {
@@ -111,35 +122,40 @@
     </form>
 
     <div id="totalExpenses" class="total">Total de Gastos: $0.00</div>
-    <table id="expenseTable">
-        <thead>
-            <tr>
-                <th>Descripción</th>
-                <th>Cantidad</th>
-                <th>Eliminar</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Aquí se cargarán las filas de la tabla al cargar la página -->
-        </tbody>
-    </table>
+    <div class="table-container">
+        <table id="expenseTable">
+            <thead>
+                <tr>
+                    <th>Descripción</th>
+                    <th>Cantidad</th>
+                    <th>Eliminar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Aquí se cargarán las filas de la tabla al cargar la página -->
+            </tbody>
+        </table>
+    </div>
     <button id="clearExpensesButton" onclick="clearAll('expenses')">Borrar todos los gastos</button>
 
     <div id="totalIncomes" class="total">Total de Ingresos: $0.00</div>
-    <table id="incomeTable">
-        <thead>
-            <tr>
-                <th>Descripción</th>
-                <th>Cantidad</th>
-                <th>Eliminar</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Aquí se cargarán las filas de la tabla al cargar la página -->
-        </tbody>
-    </table>
+    <div class="table-container">
+        <table id="incomeTable">
+            <thead>
+                <tr>
+                    <th>Descripción</th>
+                    <th>Cantidad</th>
+                    <th>Eliminar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Aquí se cargarán las filas de la tabla al cargar la página -->
+            </tbody>
+        </table>
+    </div>
     <button id="clearIncomesButton" onclick="clearAll('incomes')">Borrar todos los ingresos</button>
 
+    <h2>Gastos Totales</h2>
     <canvas id="expenseChart" width="400" height="200"></canvas>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -313,6 +329,13 @@
                 },
                 options: {
                     plugins: {
+                        title: {
+                            display: true,
+                            text: 'Gastos Totales',
+                            font: {
+                                size: 16
+                            }
+                        },
                         legend: {
                             position: 'bottom'
                         },
