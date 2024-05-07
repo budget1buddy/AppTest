@@ -156,7 +156,7 @@
         });
 
         function addEntry(type) {
-            const description = document.getElementById('description').value;
+            const description = document.getElementById('description').value.toLowerCase(); // Convertir a minúsculas
             const amount = parseFloat(document.getElementById('amount').value);
 
             if (isNaN(amount)) {
@@ -240,7 +240,7 @@
             const data = [];
 
             tableRows.forEach(row => {
-                const description = row.cells[0].textContent;
+                const description = row.cells[0].textContent.toLowerCase(); // Convertir a minúsculas
                 const amount = parseFloat(row.cells[1].textContent.replace('$', ''));
                 data.push({ description, amount });
             });
@@ -275,8 +275,14 @@
             const expenseRows = document.querySelectorAll('#expenseTable tbody tr');
 
             expenseRows.forEach(row => {
-                expenseLabels.push(row.cells[0].textContent);
-                expenseAmounts.push(parseFloat(row.cells[1].textContent.replace('$', '')));
+                const label = row.cells[0].textContent.toLowerCase(); // Convertir a minúsculas
+                const index = expenseLabels.findIndex(item => item === label);
+                if (index === -1) {
+                    expenseLabels.push(label);
+                    expenseAmounts.push(parseFloat(row.cells[1].textContent.replace('$', '')));
+                } else {
+                    expenseAmounts[index] += parseFloat(row.cells[1].textContent.replace('$', ''));
+                }
             });
 
             const ctx = document.getElementById('expenseChart').getContext('2d');
