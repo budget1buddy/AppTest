@@ -54,7 +54,7 @@
             background-color: #a0beb5d4;
         }
 
-        #total {
+        .total {
             margin-top: 20px;
             font-size: 18px;
             color: #555;
@@ -86,24 +86,31 @@
             border-radius: 4px;
             cursor: pointer;
         }
+
+        canvas {
+            margin-top: 20px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
     </style>
 </head>
 <body>
 
     <h1>Budget Buddy</h1>
 
-    <form id="expenseForm">
+    <form id="entryForm">
         <label for="description">Descripción:</label>
         <input type="text" id="description" name="description" required>
 
         <label for="amount">Cantidad:</label>
         <input type="number" id="amount" name="amount" required>
 
-        <button type="button" onclick="addExpense()">Registrar Gasto</button>
+        <button type="button" onclick="addEntry('expense')">Registrar Gasto</button>
+        <button type="button" onclick="addEntry('income')">Registrar Ingreso</button>
     </form>
 
-    <div id="total">Total de Gastos: $0.00</div>
-
+    <div id="totalExpenses" class="total">Total de Gastos: $0.00</div>
     <table id="expenseTable">
         <thead>
             <tr>
@@ -116,19 +123,39 @@
             <!-- Aquí se cargarán las filas de la tabla al cargar la página -->
         </tbody>
     </table>
+    <button id="clearExpensesButton" onclick="clearAll('expenses')">Borrar todos los gastos</button>
 
-    <button id="clearExpensesButton" onclick="clearAllExpenses()">Borrar todos los gastos</button>
+    <div id="totalIncomes" class="total">Total de Ingresos: $0.00</div>
+    <table id="incomeTable">
+        <thead>
+            <tr>
+                <th>Descripción</th>
+                <th>Cantidad</th>
+                <th>Eliminar</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aquí se cargarán las filas de la tabla al cargar la página -->
+        </tbody>
+    </table>
+    <button id="clearIncomesButton" onclick="clearAll('incomes')">Borrar todos los ingresos</button>
 
+    <canvas id="expenseChart" width="400" height="200"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         let totalExpenses = 0;
+        let totalIncomes = 0;
+        let expenseChart;
 
         // Cargar datos desde el almacenamiento local al cargar la página
         document.addEventListener('DOMContentLoaded', function () {
-            loadTableFromLocalStorage();
-            updateTotal();
+            loadTableFromLocalStorage('expenses', 'expenseTable', 'totalExpenses');
+            loadTableFromLocalStorage('incomes', 'incomeTable', 'totalIncomes');
+            updateExpenseChart(); // Actualizar el gráfico al cargar la página
         });
 
-        function addExpense() {
+        function addEntry(type) {
             const description = document.getElementById('description').value;
             const amount = parseFloat(document.getElementById('amount').value);
 
@@ -137,20 +164,26 @@
                 return;
             }
 
-            totalExpenses += amount;
+            if (type === 'expense') {
+                totalExpenses += amount;
+                updateTotal('totalExpenses', totalExpenses);
+                updateTable('expenseTable', description, amount, 'expenses');
+            } else if (type === 'income') {
+                totalIncomes += amount;
+                updateTotal('totalIncomes', totalIncomes);
+                updateTable('incomeTable', description, amount, 'incomes');
+            }
 
-            updateTotal();
-            updateTable(description, amount);
-            saveTableToLocalStorage();
+            updateExpenseChart(); // Actualizar el gráfico después de agregar una entrada
         }
 
-        function updateTotal() {
-            const totalElement = document.getElementById('total');
-            totalElement.textContent = `Total de Gastos: $${totalExpenses.toFixed(2)}`;
+        function updateTotal(totalElementId, total) {
+            const totalElement = document.getElementById(totalElementId);
+            totalElement.textContent = `Total: $${total.toFixed(2)}`;
         }
 
-        function updateTable(description, amount) {
-            const tableBody = document.querySelector('#expenseTable tbody');
+        function updateTable(tableId, description, amount, storageKey) {
+            const tableBody = document.querySelector(`#${tableId} tbody`);
             const newRow = tableBody.insertRow();
 
             const cell1 = newRow.insertCell(0);
@@ -164,29 +197,46 @@
             deleteButton.textContent = 'Eliminar';
             deleteButton.className = 'deleteButton';
             deleteButton.addEventListener('click', function () {
-                deleteExpense(newRow, amount);
+                deleteEntry(newRow, amount, storageKey);
             });
 
             cell3.appendChild(deleteButton);
+
+            saveTableToLocalStorage(storageKey);
         }
 
-        function deleteExpense(row, amount) {
-            totalExpenses -= amount;
-            updateTotal();
+        function deleteEntry(row, amount, storageKey) {
+            if (storageKey === 'expenses') {
+                totalExpenses -= amount;
+                updateTotal('totalExpenses', totalExpenses);
+            } else if (storageKey === 'incomes') {
+                totalIncomes -= amount;
+                updateTotal('totalIncomes', totalIncomes);
+            }
+
             row.remove();
-            saveTableToLocalStorage();
+            saveTableToLocalStorage(storageKey);
+            updateExpenseChart(); // Actualizar el gráfico después de eliminar una entrada
         }
 
-        function clearAllExpenses() {
-            const tableBody = document.querySelector('#expenseTable tbody');
+        function clearAll(storageKey) {
+            const tableBody = document.querySelector(`#${storageKey === 'expenses' ? 'expenseTable' : 'incomeTable'} tbody`);
             tableBody.innerHTML = '';
-            totalExpenses = 0;
-            updateTotal();
-            localStorage.removeItem('expenses');
+
+            if (storageKey === 'expenses') {
+                totalExpenses = 0;
+                updateTotal('totalExpenses', totalExpenses);
+            } else if (storageKey === 'incomes') {
+                totalIncomes = 0;
+                updateTotal('totalIncomes', totalIncomes);
+            }
+
+            localStorage.removeItem(storageKey);
+            updateExpenseChart(); // Actualizar el gráfico después de borrar todas las entradas
         }
 
-        function saveTableToLocalStorage() {
-            const tableRows = document.querySelectorAll('#expenseTable tbody tr');
+        function saveTableToLocalStorage(storageKey) {
+            const tableRows = document.querySelectorAll(`#${storageKey === 'expenses' ? 'expenseTable' : 'incomeTable'} tbody tr`);
             const data = [];
 
             tableRows.forEach(row => {
@@ -195,18 +245,86 @@
                 data.push({ description, amount });
             });
 
-            localStorage.setItem('expenses', JSON.stringify(data));
+            localStorage.setItem(storageKey, JSON.stringify(data));
         }
 
-        function loadTableFromLocalStorage() {
-            const storedData = localStorage.getItem('expenses');
+        function loadTableFromLocalStorage(storageKey, tableId, totalElementId) {
+            const storedData = localStorage.getItem(storageKey);
             if (storedData) {
                 const data = JSON.parse(storedData);
                 data.forEach(item => {
-                    updateTable(item.description, item.amount);
-                    totalExpenses += item.amount;
+                    updateTable(tableId, item.description, item.amount, storageKey);
+                    if (storageKey === 'expenses') {
+                        totalExpenses += item.amount;
+                        updateTotal(totalElementId, totalExpenses);
+                    } else if (storageKey === 'incomes') {
+                        totalIncomes += item.amount;
+                        updateTotal(totalElementId, totalIncomes);
+                    }
                 });
             }
+        }
+
+        function updateExpenseChart() {
+            if (expenseChart) {
+                expenseChart.destroy(); // Destruir el gráfico anterior antes de crear uno nuevo
+            }
+
+            const expenseLabels = [];
+            const expenseAmounts = [];
+            const expenseRows = document.querySelectorAll('#expenseTable tbody tr');
+
+            expenseRows.forEach(row => {
+                expenseLabels.push(row.cells[0].textContent);
+                expenseAmounts.push(parseFloat(row.cells[1].textContent.replace('$', '')));
+            });
+
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            expenseChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: expenseLabels,
+                    datasets: [{
+                        data: expenseAmounts,
+                        backgroundColor: [
+                            '#ffcd56',
+                            '#ff6384',
+                            '#36a2eb',
+                            '#fd6b19',
+                            '#4bc0c0',
+                            '#9966ff',
+                            '#ff99cc',
+                            '#ff9933',
+                            '#ccccff',
+                            '#99ff99',
+                            '#ff6666',
+                            '#66ff99',
+                            '#ffcccc',
+                            '#999966',
+                            '#cc99ff'
+                        ]
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.parsed || 0;
+                                    let dataset = context.dataset || {};
+                                    let sum = dataset.data.reduce((a, b) => a + b, 0);
+                                    let percentage = Math.round((value / sum) * 100);
+                                    return `${label}: ${percentage}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
     </script>
 
