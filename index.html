@@ -155,7 +155,7 @@
     </div>
     <button id="clearIncomesButton" onclick="clearAll('incomes')">Borrar todos los ingresos</button>
 
-    <h2>Gastos Totales</h2>
+    <h2>Tu restante es de: <span id="netTotal">$0.00</span></h2>
     <canvas id="expenseChart" width="400" height="200"></canvas>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -169,6 +169,7 @@
             loadTableFromLocalStorage('expenses', 'expenseTable', 'totalExpenses');
             loadTableFromLocalStorage('incomes', 'incomeTable', 'totalIncomes');
             updateExpenseChart(); // Actualizar el gráfico al cargar la página
+            updateNetTotal(); // Actualizar el total neto al cargar la página
         });
 
         function addEntry(type) {
@@ -191,11 +192,18 @@
             }
 
             updateExpenseChart(); // Actualizar el gráfico después de agregar una entrada
+            updateNetTotal(); // Actualizar el total neto después de agregar una entrada
         }
 
         function updateTotal(totalElementId, total) {
             const totalElement = document.getElementById(totalElementId);
             totalElement.textContent = `Total: $${total.toFixed(2)}`;
+        }
+
+        function updateNetTotal() {
+            const netTotal = totalIncomes - totalExpenses;
+            const netTotalElement = document.getElementById('netTotal');
+            netTotalElement.textContent = `$${netTotal.toFixed(2)}`;
         }
 
         function updateTable(tableId, description, amount, storageKey) {
@@ -233,6 +241,7 @@
             row.remove();
             saveTableToLocalStorage(storageKey);
             updateExpenseChart(); // Actualizar el gráfico después de eliminar una entrada
+            updateNetTotal(); // Actualizar el total neto después de eliminar una entrada
         }
 
         function clearAll(storageKey) {
@@ -249,6 +258,7 @@
 
             localStorage.removeItem(storageKey);
             updateExpenseChart(); // Actualizar el gráfico después de borrar todas las entradas
+            updateNetTotal(); // Actualizar el total neto después de borrar todas las entradas
         }
 
         function saveTableToLocalStorage(storageKey) {
